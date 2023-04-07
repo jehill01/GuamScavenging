@@ -5,7 +5,7 @@ library(survminer)
 library(ggplot2)
 library(ggplotify)
 
-data<-read.csv("redo2.csv")
+data<-read.csv("scavenging.csv")
 head(data)
 data$carcass[data$carcass == "MOUSE"] <- "Mouse"
 data$carcass[data$carcass == "RAT"] <- "Rat"
@@ -133,9 +133,9 @@ custom_theme <- function() {
 cbbPalette <- c("#E69F00", "#56B4E9", "#009E73")
 
 ggsurvplot(fittedseason, censor=FALSE, ggtheme = custom_theme(), palette =cbbPalette,
-           legend="bottom", legend.title="Season", legend.labs=c("Dry", "Wet"), xlab= "Time (Days)", ylab="blank")
+           legend="bottom", legend.title="Season", legend.labs=c("Dry", "Wet"), xlab= "Time (Days)", ylab="Proportion carcasses not decomposed")
 ggsurvplot(fittedcarc, censor=FALSE, ggtheme = custom_theme(), palette =cbbPalette, 
-           legend="bottom", legend.title="Carcass", legend.labs=c("Brown tree snake", "Mouse", "Rat"), xlab= "Time (Days)")
+           legend="bottom", legend.title="Carcass", legend.labs=c("Brown tree snake", "Mouse", "Rat"), xlab= "Time (Days)", ylab="Proportion carcasses not decomposed")
 
 predict(fittedsurv, data.frame(carcass="RAT", season="WET", habitat="T"), se.fit=TRUE, type=c('quantile'))
 predict(fittedsurv, data.frame(carcass="RAT", season="WET", habitat="U"), se.fit=TRUE, type=c('response'))
@@ -154,6 +154,8 @@ ggplot(aes(x=Days,fill=carcass), data=survdata)+geom_histogram(color="black", fi
   theme(plot.margin=unit(c(0.5,0.5,0.5,1), "cm"))+xlab("Days to decomposition")+ylab("Number of carcasses")+facet_wrap(~carcass)
 
 #kaplan-meier diagnostic plots for the weibull regression for survival analysis
+survdata2<-read.csv("survival.csv")
+survdata3<-survdata2[!(survdata2$TimeRight =="No"),] #removing ones with incorrect time stamps
 s<-with(survdata3,Surv(Time, Status))
 fKM <- survfit(s ~ 0,data=survdata3)
 sWei <- survreg(s ~ as.factor(habitat)+as.factor(carcass),dist='weibull',data=survdata3)
@@ -174,8 +176,7 @@ lines(predict(sWei2, newdata=list(habitat="T", season="DRY"),type="quantile",p=s
 lines(predict(sWei2, newdata=list(habitat="U", season="DRY"),type="quantile",p=seq(.01,.99,by=.01)),seq(.99,.01,by=-.01),col="black")
 
 #survival analysis- days to carcass consumption
-survdata2<-read.csv("book6REV.csv")
-survdata3<-survdata2[!(survdata2$TimeRight =="No"),] #removing ones with incorrect time stamps
+
 t2<-survreg(Surv(Time, Status)~((season+carcass+habitat)^3),
             data=survdata3, dist='weibull', na.action=na.fail) #weibull regression
 summary(t2)
